@@ -1,28 +1,78 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 
-st.set_page_config(page_title="Diabetes Assistant", layout="centered")
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(
+    page_title="Diabetes Care Dashboard",
+    layout="centered"
+)
 
-st.title("💙 Diabetes Assistant")
-st.caption("Personal use only — follow doctor's instructions.")
+# -----------------------------
+# PROFESSIONAL MOBILE STYLE
+# -----------------------------
+st.markdown("""
+    <style>
+    .stButton>button {
+        width: 100%;
+        background-color: #2563eb;
+        color: white;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 12px;
+        border: none;
+    }
+    .stNumberInput>div>div>input {
+        font-size: 18px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# ----------------------------
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("💙 Diabetes Care Dashboard")
+st.caption("Personal medical tool — follow physician instructions.")
+
+st.divider()
+
+# -----------------------------
 # INPUTS
-# ----------------------------
-blood_sugar = st.number_input("Current Blood Sugar (mg/dL)", min_value=0)
-carbs = st.number_input("Carbohydrates (grams)", min_value=0)
+# -----------------------------
+blood_sugar = st.number_input(
+    "Current Blood Sugar (mg/dL)",
+    min_value=0,
+    step=1
+)
 
-# ----------------------------
-# CALCULATIONS
-# ----------------------------
-carb_ratio = 10
-carb_dose = carbs / carb_ratio
+carbs = st.number_input(
+    "Carbohydrates (grams)",
+    min_value=0,
+    step=1
+)
 
-correction_dose = 0
+st.divider()
 
-if blood_sugar >= 150:
-    if 150 <= blood_sugar <= 190:
+# -----------------------------
+# CALCULATION BUTTON
+# -----------------------------
+if st.button("Calculate Insulin Dose"):
+
+    # -----------------------------
+    # CARB COVERAGE
+    # -----------------------------
+    carb_ratio = 10  # 1 unit per 10g carbs
+    carb_dose = carbs / carb_ratio
+
+    # -----------------------------
+    # EXACT CORRECTION SCALE
+    # -----------------------------
+    if blood_sugar < 150:
+        correction_dose = 0
+    elif 150 <= blood_sugar <= 190:
         correction_dose = 1
     elif 191 <= blood_sugar <= 230:
         correction_dose = 2
@@ -34,51 +84,87 @@ if blood_sugar >= 150:
         correction_dose = 5
     elif 351 <= blood_sugar <= 390:
         correction_dose = 6
-    elif blood_sugar > 390:
+    else:  # > 390
         correction_dose = 7
 
-total_dose = round(carb_dose + correction_dose)
+    # -----------------------------
+    # TOTAL DOSE (ROUNDED)
+    # -----------------------------
+    total_dose = round(carb_dose + correction_dose)
 
-# Safety warning
-if total_dose > 20:
-    st.warning("⚠️ High dose — please verify.")
+    if total_dose < 0:
+        total_dose = 0
 
-# ----------------------------
-# BUTTON
-# ----------------------------
-if st.button("🧮 Calculate Dose", use_container_width=True):
+    # -----------------------------
+    # SAFETY WARNINGS
+    # -----------------------------
+    if blood_sugar < 70:
+        st.error("⚠️ Blood sugar is LOW (<70). Treat hypoglycemia before insulin.")
+    elif blood_sugar > 300:
+        st.warning("⚠️ Blood sugar very high (>300). Monitor closely.")
 
+    if total_dose > 25:
+        st.warning("⚠️ High insulin dose. Verify before injecting.")
+
+    # -----------------------------
+    # DISPLAY RESULT
+    # -----------------------------
     st.success(f"Recommended Humalog Dose: {total_dose} units")
 
-    # Initialize history safely
-    if "history" not in st.session_state:
-        st.session_state.history = []
+    st.info(f"""
+    Carb Coverage: {round(carb_dose, 2)} units  
+    Correction Dose: {correction_dose} units  
+    """)
 
-    st.session_state.history.append({
-        "Time": datetime.now(),
+    # -----------------------------
+    # SAVE TO CSV
+    # -----------------------------
+    data = {
+        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Blood Sugar": blood_sugar,
         "Carbs": carbs,
-        "Dose": total_dose
-    })
+        "Carb Dose": round(carb_dose, 2),
+        "Correction Dose": correction_dose,
+        "Total Dose": total_dose
+    }
 
-# ----------------------------
-# HISTORY + CHART (SAFE)
-# ----------------------------
-if "history" in st.session_state and len(st.session_state.history) > 0:
+    file_path = "glucose_log.csv"
 
-    st.divider()
-    st.subheader("📊 Recent Entries")
+    if os.path.exists(file_path):
+        df = pd.read_csv(file_path)
+        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+    else:
+        df = pd.DataFrame([data])
 
-    df = pd.DataFrame(st.session_state.history)
+    df.to_csv(file_path, index=False)
+
+# -----------------------------
+# HISTORY SECTION
+# -----------------------------
+st.divider()
+st.subheader("📊 Dose History")
+
+file_path = "glucose_log.csv"
+
+if os.path.exists(file_path):
+    df = pd.read_csv(file_path)
+
     st.dataframe(df, use_container_width=True)
 
-    st.subheader("Dose Trend")
-    st.line_chart(df.set_index("Time")["Dose"])
+    if len(df) > 0:
+        df["Time"] = pd.to_datetime(df["Time"])
+        df = df.sort_values("Time")
+        st.line_chart(df.set_index("Time")["Total Dose"])
+else:
+    st.info("No records yet.")
 
-# ----------------------------
-# BASAL INFO
-# ----------------------------
+# -----------------------------
+# BASAL INSULIN INFO
+# -----------------------------
 st.divider()
-st.subheader("Basal Insulin Schedule")
-st.write("Morning: 10 units")
-st.write("Evening: 14 units")
+st.subheader("🟢 Basal Insulin Schedule")
+
+st.write("Morning: 10 units (Glargine-yfgn / Semglee)")
+st.write("Evening: 14 units (Glargine-yfgn / Semglee)")
+
+st.caption("Follow prescribed insulin regimen strictly.")
