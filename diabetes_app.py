@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import matplotlib.pyplot as plt
+st.line_chart(df.set_index("Time")["Dose"])
 
 # ----------------------------
 # PAGE CONFIG (Mobile Friendly)
@@ -104,3 +104,4 @@ st.subheader("Basal Insulin Schedule")
 
 st.write("Morning: 10 units")
 st.write("Evening: 14 units")
+
