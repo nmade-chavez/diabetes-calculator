@@ -12,29 +12,32 @@ st.set_page_config(
 )
 
 # -----------------------------
-# PROFESSIONAL MOBILE STYLE
+# MOBILE FRIENDLY STYLE
 # -----------------------------
 st.markdown("""
-    <style>
-    .stButton>button {
-        width: 100%;
-        background-color: #2563eb;
-        color: white;
-        font-size: 18px;
-        padding: 12px;
-        border-radius: 12px;
-        border: none;
-    }
-    .stNumberInput>div>div>input {
-        font-size: 18px;
-    }
-    </style>
+<style>
+.stButton>button {
+    width: 100%;
+    background-color: #2563eb;
+    color: white;
+    font-size: 18px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+}
+.stNumberInput>div>div>input {
+    font-size: 18px;
+}
+.block-container {
+    padding-top: 2rem;
+}
+</style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
 # TITLE
 # -----------------------------
-st.title("Diabetes Care Dashboard 💙 ")
+st.title("💙 Diabetes Care Dashboard")
 st.caption("Personal medical tool — follow physician instructions.")
 
 st.divider()
@@ -49,7 +52,7 @@ blood_sugar = st.number_input(
 )
 
 carbs = st.number_input(
-    "Carbohydrates (grams)",
+    "Carbohydrates to Eat (grams)",
     min_value=0,
     step=1
 )
@@ -57,78 +60,77 @@ carbs = st.number_input(
 st.divider()
 
 # -----------------------------
-# CALCULATION BUTTON
+# CALCULATE
 # -----------------------------
 if st.button("Calculate"):
 
-    carb_ratio = 10  # 1 unit per 10g carbs
-
     # -----------------------------
-    # LOW BLOOD SUGAR LOGIC
+    # LOW BLOOD SUGAR SAFETY
     # -----------------------------
     if blood_sugar < 70:
         st.error("⚠️ LOW BLOOD SUGAR")
         st.success("Eat 15 grams of fast-acting carbohydrates immediately.")
+        st.info("Examples: juice, glucose tablets, regular soda.")
         st.info("Recheck blood sugar in 15 minutes.")
-    
+        st.stop()
+
+    # -----------------------------
+    # CARB COVERAGE (1:10 ratio)
+    # -----------------------------
+    carb_ratio = 10
+    carb_dose = carbs / carb_ratio
+
+    # -----------------------------
+    # EXACT CORRECTION SCALE
+    # -----------------------------
+    if blood_sugar < 150:
+        correction_dose = 0
+    elif 150 <= blood_sugar <= 190:
+        correction_dose = 1
+    elif 191 <= blood_sugar <= 230:
+        correction_dose = 2
+    elif 231 <= blood_sugar <= 270:
+        correction_dose = 3
+    elif 271 <= blood_sugar <= 310:
+        correction_dose = 4
+    elif 311 <= blood_sugar <= 350:
+        correction_dose = 5
+    elif 351 <= blood_sugar <= 390:
+        correction_dose = 6
     else:
-        # -----------------------------
-        # CARB COVERAGE
-        # -----------------------------
-        carb_dose = carbs / carb_ratio
+        correction_dose = 7
 
-        # -----------------------------
-        # EXACT CORRECTION SCALE
-        # -----------------------------
-        if blood_sugar < 150:
-            correction_dose = 0
-        elif 150 <= blood_sugar <= 190:
-            correction_dose = 1
-        elif 191 <= blood_sugar <= 230:
-            correction_dose = 2
-        elif 231 <= blood_sugar <= 270:
-            correction_dose = 3
-        elif 271 <= blood_sugar <= 310:
-            correction_dose = 4
-        elif 311 <= blood_sugar <= 350:
-            correction_dose = 5
-        elif 351 <= blood_sugar <= 390:
-            correction_dose = 6
-        else:
-            correction_dose = 7
+    # -----------------------------
+    # TOTAL DOSE
+    # -----------------------------
+    total_dose = round(carb_dose + correction_dose)
 
-        total_dose = round(carb_dose + correction_dose)
-
-        st.success(f"Recommended Humalog Dose: {total_dose} units")
-        st.info(f"Carb Coverage: {round(carb_dose,2)} units")
-        st.info(f"Correction Dose: {correction_dose} units")
-
-        if blood_sugar > 300:
-            st.warning("⚠️ Very high blood sugar — monitor closely.")
+    if total_dose < 0:
+        total_dose = 0
 
     # -----------------------------
     # SAFETY WARNINGS
     # -----------------------------
-    if blood_sugar < 70:
-        st.error("⚠️ Blood sugar is LOW (<70). Treat hypoglycemia before insulin.")
-    elif blood_sugar > 300:
-        st.warning("⚠️ Blood sugar very high (>300). Monitor closely.")
-
+    if blood_sugar > 300:
+        st.warning("⚠️ Very high blood sugar. Monitor closely.")
+    
     if total_dose > 25:
-        st.warning("⚠️ High insulin dose. Verify before injecting.")
+        st.warning("⚠️ High insulin dose. Please verify before injecting.")
 
     # -----------------------------
-    # DISPLAY RESULT
+    # DISPLAY RESULTS
     # -----------------------------
     st.success(f"Recommended Humalog Dose: {total_dose} units")
 
     st.info(f"""
-    Carb Coverage: {round(carb_dose, 2)} units  
-    Correction Dose: {correction_dose} units  
-    """)
+Carb Coverage: {round(carb_dose,2)} units  
+Correction Dose: {correction_dose} units
+""")
+
+    st.caption("I love you. Please take care of your health 💙")
 
     # -----------------------------
-    # SAVE TO CSV
+    # SAVE LOG
     # -----------------------------
     data = {
         "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -150,7 +152,7 @@ if st.button("Calculate"):
     df.to_csv(file_path, index=False)
 
 # -----------------------------
-# HISTORY SECTION
+# HISTORY
 # -----------------------------
 st.divider()
 st.subheader("📊 Dose History")
@@ -179,5 +181,3 @@ st.write("Morning: 10 units (Glargine-yfgn / Semglee)")
 st.write("Evening: 14 units (Glargine-yfgn / Semglee)")
 
 st.caption("Follow prescribed insulin regimen strictly.")
-
-
