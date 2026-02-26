@@ -1,32 +1,24 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-st.line_chart(df.set_index("Time")["Dose"])
 
-# ----------------------------
-# PAGE CONFIG (Mobile Friendly)
-# ----------------------------
-st.set_page_config(
-    page_title="Diabetes Assistant",
-    layout="centered"  # Better for mobile
-)
+st.set_page_config(page_title="Diabetes Assistant", layout="centered")
 
 st.title("💙 Diabetes Assistant")
 st.caption("Personal use only — follow doctor's instructions.")
 
 # ----------------------------
-# INPUTS (Stacked for Mobile)
+# INPUTS
 # ----------------------------
 blood_sugar = st.number_input("Current Blood Sugar (mg/dL)", min_value=0)
 carbs = st.number_input("Carbohydrates (grams)", min_value=0)
 
-# Fixed regimen
-carb_ratio = 10  # 1 unit per 10g carbs
-
 # ----------------------------
 # CALCULATIONS
 # ----------------------------
+carb_ratio = 10
 carb_dose = carbs / carb_ratio
+
 correction_dose = 0
 
 if blood_sugar >= 150:
@@ -47,23 +39,18 @@ if blood_sugar >= 150:
 
 total_dose = round(carb_dose + correction_dose)
 
-# Safety check
+# Safety warning
 if total_dose > 20:
     st.warning("⚠️ High dose — please verify.")
 
 # ----------------------------
-# BIG RESULT DISPLAY (Mobile Friendly)
+# BUTTON
 # ----------------------------
-st.divider()
-
 if st.button("🧮 Calculate Dose", use_container_width=True):
 
     st.success(f"Recommended Humalog Dose: {total_dose} units")
 
-    st.write("Carb Dose:", round(carb_dose, 2), "units")
-    st.write("Correction Dose:", correction_dose, "units")
-
-    # Save history
+    # Initialize history safely
     if "history" not in st.session_state:
         st.session_state.history = []
 
@@ -75,33 +62,23 @@ if st.button("🧮 Calculate Dose", use_container_width=True):
     })
 
 # ----------------------------
-# HISTORY (Simplified for Mobile)
+# HISTORY + CHART (SAFE)
 # ----------------------------
 if "history" in st.session_state and len(st.session_state.history) > 0:
 
     st.divider()
-    st.subheader("📊 Recent Doses")
+    st.subheader("📊 Recent Entries")
 
     df = pd.DataFrame(st.session_state.history)
     st.dataframe(df, use_container_width=True)
 
-    # Simple Graph
     st.subheader("Dose Trend")
-
-    fig, ax = plt.subplots()
-    ax.plot(df["Time"], df["Dose"], marker="o")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Units")
-    plt.xticks(rotation=45)
-
-    st.pyplot(fig)
+    st.line_chart(df.set_index("Time")["Dose"])
 
 # ----------------------------
-# BASAL INFO (Compact)
+# BASAL INFO
 # ----------------------------
 st.divider()
 st.subheader("Basal Insulin Schedule")
-
 st.write("Morning: 10 units")
 st.write("Evening: 14 units")
-
