@@ -1,28 +1,71 @@
-﻿import streamlit as st
+import streamlit as st
+from datetime import datetime
 
-st.title("💙 Personal Diabetes Calculator")
+st.title("Personal Diabetes Calculator")
 
-st.write("Enter values based on doctor's instructions.")
+st.header("Meal Bolus Calculator (Humalog)")
 
+# Inputs
 blood_sugar = st.number_input("Current Blood Sugar (mg/dL)", min_value=0)
-target_sugar = st.number_input("Target Blood Sugar (mg/dL)", value=100)
-correction_factor = st.number_input("Correction Factor (1 unit lowers by how much)", min_value=1)
+carbs = st.number_input("Carbohydrates (grams)", min_value=0)
 
-carbs = st.number_input("Carbs to Eat (grams)", min_value=0)
-carb_ratio = st.number_input("Carb Ratio (grams per 1 unit insulin)", min_value=1)
+# Fixed regimen
+carb_ratio = 10  # 1 unit per 10g carbs
 
-if st.button("Calculate"):
+# ----- Carb Dose -----
+carb_dose = carbs / carb_ratio
 
-    correction = 0
-    if blood_sugar > target_sugar:
-        correction = (blood_sugar - target_sugar) / correction_factor
+# ----- Correction Scale -----
+correction_dose = 0
 
-    carb_dose = carbs / carb_ratio
-    total = correction + carb_dose
+if blood_sugar >= 150:
+    if 150 <= blood_sugar <= 190:
+        correction_dose = 1
+    elif 191 <= blood_sugar <= 230:
+        correction_dose = 2
+    elif 231 <= blood_sugar <= 270:
+        correction_dose = 3
+    elif 271 <= blood_sugar <= 310:
+        correction_dose = 4
+    elif 311 <= blood_sugar <= 350:
+        correction_dose = 5
+    elif 351 <= blood_sugar <= 390:
+        correction_dose = 6
+    elif blood_sugar > 390:
+        correction_dose = 7
 
+# ----- Total Dose -----
+total_dose = carb_dose + correction_dose
+
+# Round to whole units (as requested)
+total_dose = round(total_dose)
+
+# Safety limits
+if total_dose < 0:
+    total_dose = 0
+
+if total_dose > 20:
+    st.warning("Dose is unusually high. Please verify with healthcare provider.⚠️ ")
+
+# Display results
+if st.button("Calculate Dose"):
     st.subheader("Results")
-    st.write("Correction Dose:", round(correction, 2), "units")
     st.write("Carb Dose:", round(carb_dose, 2), "units")
-    st.success("Total Suggested Dose: " + str(round(total, 2)) + " units")
+    st.write("Correction Dose:", correction_dose, "units")
+    st.success("Total Humalog Dose (Rounded): " + str(total_dose) + " units")
 
-    st.warning("⚠️ Always confirm with medical advice.")
+    # Simple logging
+    log_entry = f"{datetime.now()} | BG: {blood_sugar} | Carbs: {carbs}g | Dose: {total_dose}u\n"
+
+    with open("dose_log.txt", "a") as f:
+        f.write(log_entry)
+
+    st.info("Entry saved to local log file.")
+
+# ----- Basal Insulin Reminder -----
+st.header("Basal Insulin (Semglee)")
+
+st.write("Morning: 10 units")
+st.write("Evening: 14 units")
+
+st.caption("Always confirm doses with medical guidance.⚠️ ")
