@@ -34,7 +34,7 @@ st.markdown("""
 # -----------------------------
 # TITLE
 # -----------------------------
-st.title("💙 Diabetes Care Dashboard")
+st.title("Diabetes Care Dashboard 💙 ")
 st.caption("Personal medical tool — follow physician instructions.")
 
 st.divider()
@@ -168,3 +168,4 @@ st.write("Morning: 10 units (Glargine-yfgn / Semglee)")
 st.write("Evening: 14 units (Glargine-yfgn / Semglee)")
 
 st.caption("Follow prescribed insulin regimen strictly.")
+
