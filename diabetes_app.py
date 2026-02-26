@@ -59,41 +59,52 @@ st.divider()
 # -----------------------------
 # CALCULATION BUTTON
 # -----------------------------
-if st.button("Calculate Insulin Dose"):
+if st.button("Calculate"):
 
-    # -----------------------------
-    # CARB COVERAGE
-    # -----------------------------
     carb_ratio = 10  # 1 unit per 10g carbs
-    carb_dose = carbs / carb_ratio
 
     # -----------------------------
-    # EXACT CORRECTION SCALE
+    # LOW BLOOD SUGAR LOGIC
     # -----------------------------
-    if blood_sugar < 150:
-        correction_dose = 0
-    elif 150 <= blood_sugar <= 190:
-        correction_dose = 1
-    elif 191 <= blood_sugar <= 230:
-        correction_dose = 2
-    elif 231 <= blood_sugar <= 270:
-        correction_dose = 3
-    elif 271 <= blood_sugar <= 310:
-        correction_dose = 4
-    elif 311 <= blood_sugar <= 350:
-        correction_dose = 5
-    elif 351 <= blood_sugar <= 390:
-        correction_dose = 6
-    else:  # > 390
-        correction_dose = 7
+    if blood_sugar < 70:
+        st.error("⚠️ LOW BLOOD SUGAR")
+        st.success("Eat 15 grams of fast-acting carbohydrates immediately.")
+        st.info("Recheck blood sugar in 15 minutes.")
+    
+    else:
+        # -----------------------------
+        # CARB COVERAGE
+        # -----------------------------
+        carb_dose = carbs / carb_ratio
 
-    # -----------------------------
-    # TOTAL DOSE (ROUNDED)
-    # -----------------------------
-    total_dose = round(carb_dose + correction_dose)
+        # -----------------------------
+        # EXACT CORRECTION SCALE
+        # -----------------------------
+        if blood_sugar < 150:
+            correction_dose = 0
+        elif 150 <= blood_sugar <= 190:
+            correction_dose = 1
+        elif 191 <= blood_sugar <= 230:
+            correction_dose = 2
+        elif 231 <= blood_sugar <= 270:
+            correction_dose = 3
+        elif 271 <= blood_sugar <= 310:
+            correction_dose = 4
+        elif 311 <= blood_sugar <= 350:
+            correction_dose = 5
+        elif 351 <= blood_sugar <= 390:
+            correction_dose = 6
+        else:
+            correction_dose = 7
 
-    if total_dose < 0:
-        total_dose = 0
+        total_dose = round(carb_dose + correction_dose)
+
+        st.success(f"Recommended Humalog Dose: {total_dose} units")
+        st.info(f"Carb Coverage: {round(carb_dose,2)} units")
+        st.info(f"Correction Dose: {correction_dose} units")
+
+        if blood_sugar > 300:
+            st.warning("⚠️ Very high blood sugar — monitor closely.")
 
     # -----------------------------
     # SAFETY WARNINGS
@@ -168,4 +179,5 @@ st.write("Morning: 10 units (Glargine-yfgn / Semglee)")
 st.write("Evening: 14 units (Glargine-yfgn / Semglee)")
 
 st.caption("Follow prescribed insulin regimen strictly.")
+
 
