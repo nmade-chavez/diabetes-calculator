@@ -3,30 +3,30 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# -----------------------------
+# -----------------------------------
 # PAGE CONFIG
-# -----------------------------
+# -----------------------------------
 st.set_page_config(
-    page_title="Diabetes Care Dashboard",
+    page_title="Insulin Dose Calculator",
     layout="centered"
 )
 
-# -----------------------------
-# MOBILE FRIENDLY STYLE
-# -----------------------------
+# -----------------------------------
+# MOBILE STYLING
+# -----------------------------------
 st.markdown("""
 <style>
 .stButton>button {
     width: 100%;
-    background-color: #2563eb;
+    background-color: #0F62FE;
     color: white;
     font-size: 18px;
-    padding: 12px;
+    padding: 14px;
     border-radius: 12px;
     border: none;
 }
-.stNumberInput>div>div>input {
-    font-size: 18px;
+.stNumberInput input {
+    font-size: 18px !important;
 }
 .block-container {
     padding-top: 2rem;
@@ -34,17 +34,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
+# -----------------------------------
 # TITLE
-# -----------------------------
-st.title("💙 Diabetes Care Dashboard")
-st.caption("Personal medical tool — follow physician instructions.")
+# -----------------------------------
+st.title("💙 Insulin Dose Calculator")
+st.caption("Based on prescribed insulin regimen")
 
 st.divider()
 
-# -----------------------------
-# INPUTS
-# -----------------------------
+# -----------------------------------
+# INPUT SECTION
+# -----------------------------------
 blood_sugar = st.number_input(
     "Current Blood Sugar (mg/dL)",
     min_value=0,
@@ -52,21 +52,21 @@ blood_sugar = st.number_input(
 )
 
 carbs = st.number_input(
-    "Carbohydrates to Eat (grams)",
+    "Carbohydrates You Will Eat (grams)",
     min_value=0,
     step=1
 )
 
 st.divider()
 
-# -----------------------------
-# CALCULATE
-# -----------------------------
-if st.button("Calculate"):
+# -----------------------------------
+# CALCULATION BUTTON
+# -----------------------------------
+if st.button("Calculate Dose"):
 
-    # -----------------------------
+    # ---------------------------
     # LOW BLOOD SUGAR SAFETY
-    # -----------------------------
+    # ---------------------------
     if blood_sugar < 70:
         st.error("⚠️ LOW BLOOD SUGAR")
         st.success("Eat 15 grams of fast-acting carbohydrates immediately.")
@@ -74,15 +74,15 @@ if st.button("Calculate"):
         st.info("Recheck blood sugar in 15 minutes.")
         st.stop()
 
-    # -----------------------------
-    # CARB COVERAGE (1:10 ratio)
-    # -----------------------------
+    # ---------------------------
+    # CARB COVERAGE
+    # ---------------------------
     carb_ratio = 10
     carb_dose = carbs / carb_ratio
 
-    # -----------------------------
-    # EXACT CORRECTION SCALE
-    # -----------------------------
+    # ---------------------------
+    # CORRECTION SCALE
+    # ---------------------------
     if blood_sugar < 150:
         correction_dose = 0
     elif 150 <= blood_sugar <= 190:
@@ -100,26 +100,23 @@ if st.button("Calculate"):
     else:
         correction_dose = 7
 
-    # -----------------------------
-    # TOTAL DOSE
-    # -----------------------------
+    # ---------------------------
+    # TOTAL DOSE (rounded)
+    # ---------------------------
     total_dose = round(carb_dose + correction_dose)
 
     if total_dose < 0:
         total_dose = 0
 
-    # -----------------------------
-    # SAFETY WARNINGS
-    # -----------------------------
+    # ---------------------------
+    # HIGH SUGAR WARNING
+    # ---------------------------
     if blood_sugar > 300:
-        st.warning("⚠️ Very high blood sugar. Monitor closely.")
-    
-    if total_dose > 25:
-        st.warning("⚠️ High insulin dose. Please verify before injecting.")
+        st.warning("⚠️ Very high blood sugar. Monitor closely and consider ketone check.")
 
-    # -----------------------------
+    # ---------------------------
     # DISPLAY RESULTS
-    # -----------------------------
+    # ---------------------------
     st.success(f"Recommended Humalog Dose: {total_dose} units")
 
     st.info(f"""
@@ -129,19 +126,19 @@ Correction Dose: {correction_dose} units
 
     st.caption("I love you. Please take care of your health 💙")
 
-    # -----------------------------
-    # SAVE LOG
-    # -----------------------------
+    # ---------------------------
+    # SAVE HISTORY
+    # ---------------------------
     data = {
         "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Blood Sugar": blood_sugar,
-        "Carbs": carbs,
-        "Carb Dose": round(carb_dose, 2),
+        "Carbs (g)": carbs,
+        "Carb Dose": round(carb_dose,2),
         "Correction Dose": correction_dose,
         "Total Dose": total_dose
     }
 
-    file_path = "glucose_log.csv"
+    file_path = "insulin_log.csv"
 
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
@@ -151,17 +148,16 @@ Correction Dose: {correction_dose} units
 
     df.to_csv(file_path, index=False)
 
-# -----------------------------
-# HISTORY
-# -----------------------------
+# -----------------------------------
+# HISTORY SECTION
+# -----------------------------------
 st.divider()
 st.subheader("📊 Dose History")
 
-file_path = "glucose_log.csv"
+file_path = "insulin_log.csv"
 
 if os.path.exists(file_path):
     df = pd.read_csv(file_path)
-
     st.dataframe(df, use_container_width=True)
 
     if len(df) > 0:
@@ -171,13 +167,13 @@ if os.path.exists(file_path):
 else:
     st.info("No records yet.")
 
-# -----------------------------
-# BASAL INSULIN INFO
-# -----------------------------
+# -----------------------------------
+# BASAL INSULIN INFO (Display Only)
+# -----------------------------------
 st.divider()
 st.subheader("🟢 Basal Insulin Schedule")
 
-st.write("Morning: 10 units (Glargine-yfgn / Semglee)")
-st.write("Evening: 14 units (Glargine-yfgn / Semglee)")
+st.write("Morning: 10 units — Glargine-yfgn (Semglee)")
+st.write("Evening: 14 units — Glargine-yfgn (Semglee)")
 
-st.caption("Follow prescribed insulin regimen strictly.")
+st.caption("Follow physician instructions strictly.")
