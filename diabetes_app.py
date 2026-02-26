@@ -1,21 +1,32 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
+import matplotlib.pyplot as plt
 
-st.title("Personal Diabetes Calculator")
+# ----------------------------
+# PAGE CONFIG (Mobile Friendly)
+# ----------------------------
+st.set_page_config(
+    page_title="Diabetes Assistant",
+    layout="centered"  # Better for mobile
+)
 
-st.header("Meal Bolus Calculator (Humalog)")
+st.title("💙 Diabetes Assistant")
+st.caption("Personal use only — follow doctor's instructions.")
 
-# Inputs
+# ----------------------------
+# INPUTS (Stacked for Mobile)
+# ----------------------------
 blood_sugar = st.number_input("Current Blood Sugar (mg/dL)", min_value=0)
 carbs = st.number_input("Carbohydrates (grams)", min_value=0)
 
 # Fixed regimen
 carb_ratio = 10  # 1 unit per 10g carbs
 
-# ----- Carb Dose -----
+# ----------------------------
+# CALCULATIONS
+# ----------------------------
 carb_dose = carbs / carb_ratio
-
-# ----- Correction Scale -----
 correction_dose = 0
 
 if blood_sugar >= 150:
@@ -34,38 +45,62 @@ if blood_sugar >= 150:
     elif blood_sugar > 390:
         correction_dose = 7
 
-# ----- Total Dose -----
-total_dose = carb_dose + correction_dose
+total_dose = round(carb_dose + correction_dose)
 
-# Round to whole units (as requested)
-total_dose = round(total_dose)
-
-# Safety limits
-if total_dose < 0:
-    total_dose = 0
-
+# Safety check
 if total_dose > 20:
-    st.warning("Dose is unusually high. Please verify with healthcare provider.⚠️ ")
+    st.warning("⚠️ High dose — please verify.")
 
-# Display results
-if st.button("Calculate Dose"):
-    st.subheader("Results")
+# ----------------------------
+# BIG RESULT DISPLAY (Mobile Friendly)
+# ----------------------------
+st.divider()
+
+if st.button("🧮 Calculate Dose", use_container_width=True):
+
+    st.success(f"Recommended Humalog Dose: {total_dose} units")
+
     st.write("Carb Dose:", round(carb_dose, 2), "units")
     st.write("Correction Dose:", correction_dose, "units")
-    st.success("Total Humalog Dose (Rounded): " + str(total_dose) + " units")
 
-    # Simple logging
-    log_entry = f"{datetime.now()} | BG: {blood_sugar} | Carbs: {carbs}g | Dose: {total_dose}u\n"
+    # Save history
+    if "history" not in st.session_state:
+        st.session_state.history = []
 
-    with open("dose_log.txt", "a") as f:
-        f.write(log_entry)
+    st.session_state.history.append({
+        "Time": datetime.now(),
+        "Blood Sugar": blood_sugar,
+        "Carbs": carbs,
+        "Dose": total_dose
+    })
 
-    st.info("Entry saved to local log file.")
+# ----------------------------
+# HISTORY (Simplified for Mobile)
+# ----------------------------
+if "history" in st.session_state and len(st.session_state.history) > 0:
 
-# ----- Basal Insulin Reminder -----
-st.header("Basal Insulin (Semglee)")
+    st.divider()
+    st.subheader("📊 Recent Doses")
+
+    df = pd.DataFrame(st.session_state.history)
+    st.dataframe(df, use_container_width=True)
+
+    # Simple Graph
+    st.subheader("Dose Trend")
+
+    fig, ax = plt.subplots()
+    ax.plot(df["Time"], df["Dose"], marker="o")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Units")
+    plt.xticks(rotation=45)
+
+    st.pyplot(fig)
+
+# ----------------------------
+# BASAL INFO (Compact)
+# ----------------------------
+st.divider()
+st.subheader("Basal Insulin Schedule")
 
 st.write("Morning: 10 units")
 st.write("Evening: 14 units")
-
-st.caption("Always confirm doses with medical guidance.⚠️ ")
